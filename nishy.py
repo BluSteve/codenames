@@ -1,0 +1,108 @@
+import gensim
+from nltk.corpus import wordnet as wn
+from nltk.data import find
+from nltk.metrics.distance import edit_distance
+
+word2vec_sample = str(find('models/word2vec_sample/pruned.word2vec.txt'))
+model = gensim.models.KeyedVectors.load_word2vec_format(word2vec_sample, binary=False)
+
+
+class NishyBot:
+    def __init__(self, good, bad, okay, assassin):
+        self.good = good;
+        self.bad = bad;
+        self.okay = okay;
+        self.assassin = assassin;
+
+    def get_similar_hints(self):
+        combined = []
+        for word in self.good:
+            for hint in self.filter_hints([x[0] for x in model.most_similar(positive=[word], topn=10)]):
+                combined.append(hint)
+        return combined
+
+    def filter_hints(self, hints):
+        barray = [True] * len(hints)
+        for word in self.good:
+            leven = [edit_distance(x, word) for x in hints]
+
+            SAMENESS_THRESHOLD = 0.7
+            for i in range(len(hints)):
+                if (leven[i] / len(word) < SAMENESS_THRESHOLD):
+                    barray[i] = False;
+
+        final_hints = [x for i, x in enumerate(hints) if barray[i]]
+        return final_hints
+
+    def get_google_words(self):
+        google_words = []
+        with open('google-10000-english.txt', 'r') as f:
+            google_words = f.readlines()
+        google_words = [x.strip() for x in google_words]
+        google_words = self.filter_hints(google_words)
+        return google_words
+
+    def to_synsets(words):
+        return [wn.synsets(x)[0] for x in words]
+
+    def get_hints(self):
+        similar_hints = self.get_similar_hints()
+
+        good_synsets = NishyBot.to_synsets(self.good)
+        bad_synsets = NishyBot.to_synsets(self.bad)
+        okay_synsets = NishyBot.to_synsets(self.okay)
+        assassin_synsets = NishyBot.to_synsets(self.assassin)
+        hints_synsets = NishyBot.to_synsets(similar_hints)
+
+        google_synsets = []
+        final_google_words = []
+        for word in self.get_google_words():
+            synsets = wn.synsets(word)
+            if (len(synsets) > 0):
+                google_synsets.append(synsets[0])
+                final_google_words.append(word)
+        google_synsets = hints_synsets + google_synsets
+        final_google_words = similar_hints + final_google_words
+
+        to_sort = []
+
+        for i, x in enumerate(google_synsets):
+            good_sum = 0
+            for y in good_synsets:
+                good_sum += wn.path_similarity(x, y) ** 2
+            bad_sum = 0
+            for y in bad_synsets:
+                bad_sum += wn.path_similarity(x, y) ** 2
+            okay_sum = 0
+            for y in okay_synsets:
+                okay_sum += wn.path_similarity(x, y) ** 2
+            assassin_sum = 0
+            for y in assassin_synsets:
+                assassin_sum += wn.path_similarity(x, y) ** 2
+
+            index = good_sum * 2 - bad_sum * 2 - okay_sum - assassin_sum * 5
+
+            to_sort.append((final_google_words[i], x, index))
+
+            # print(x, index, good_sum, bad_sum, okay_sum, assassin_sum)
+
+        to_sort.sort(key=lambda x: x[2], reverse=True)
+
+        dict = {}
+        for x in to_sort[::-1]:
+            dict[x[1]] = x
+
+        vc = list(dict.values()).copy()
+        vc.sort(key=lambda x: x[2], reverse=True)
+
+        to_give = [x[0] for x in vc]
+        return to_give[:10]
+
+
+if __name__ == '__main__':
+    good = ['millionaire', 'agent', 'paper', 'lace', 'oil', 'flood', 'telescope', 'window', 'fiddle']
+    bad = ['soup', 'arm', 'drum', 'bowl', 'memory', 'school', 'luck', 'plastic']
+    okay = ['root', 'bowler', 'maracas', 'second', 'bacon', 'tutu', 'kid']
+    assassin = ['match']
+    n = NishyBot(good, bad, okay, assassin)
+    print(n.get_hints())
