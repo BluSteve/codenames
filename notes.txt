@@ -1,0 +1,7 @@
+# 1. get words most similar to a good word, call this hint
+# 1a. filter hints based on potentially rule-breaking sameness to a good word
+# 2. find path_similarity between hint and all other words. if good words high similarity then bonus, otherwise otherwise etc.
+# 3. obtain hints and their corresponding "scores" wrt good words and bad words
+# 4. give them the best hint
+
+# 5. integrate with web interface using scraper
