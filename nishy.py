@@ -52,7 +52,7 @@ class NishyBot:
         google_words = self.filter_hints(google_words)
         return google_words
 
-    def to_synsets(words):
+    def to_synsets(words): # ALL synsets for a word. does not ensure 1 to 1 match
         r = []
         for x in words:
             synsets = wn.synsets(x)
@@ -131,13 +131,13 @@ class NishyBot:
     def get_shortlist(self, n=20):
         hints = self.get_hints(n)
         hints.sort(key=lambda x:x[1], reverse=True)
-        return hints[:3]
+        return hints[:5]
 
 
 if __name__ == '__main__':
-    good = ['millionaire', 'agent', 'paper', 'lace', 'oil', 'flood', 'telescope', 'window', 'fiddle']
-    bad = ['soup', 'arm', 'drum', 'bowl', 'memory', 'school', 'luck', 'plastic']
-    okay = ['root', 'bowler', 'maracas', 'second', 'bacon', 'tutu', 'kid']
-    assassin = ['match']
+    good = ['door','cheese','bank','sleep','anthem','forest','sink','jellyfish']
+    bad = ['berry','paper','europe','star','bean','slipper','bomb','axe','blues']
+    okay = ['book','china','brick','house','farm','curry','germany']
+    assassin = ['medic']
     n = NishyBot(good, bad, okay, assassin)
-    print(n.get_hints());
+    print(n.get_shortlist())
